@@ -1,0 +1,230 @@
+---
+output: revealjs::revealjs_presentation
+---
+
+## Phân tích tập dữ liệu và rút ra kết luận về  ảnh hưởng của thể loại phim và đánh giá nội dung tới điểm số IMDB
+
+- Nhóm thực hiện:
+  - Trần Tiến Đức -   18133007
+  - Lương Uy Long - 18133026
+  - Lê Đỗ Trà My - 18133030
+  - Trần Như Thuận - 18133054
+
+- Thời gian thực hiện: 19-27/1/2021
+
+## Giới thiệu
+- Nguồn dữ liệu: https://www.kaggle.com/adnanr94/imdb-movies-metadata
+- Phân tích tập dữ liệu và rút ra kết luận về  ảnh hưởng của thể loại phim và đánh giá nội dung tới điểm số 
+
+## Tổng quan về dữ liệu
+
+- Cấu trúc của tập dữ liệu
+```{r load-packages, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(ggplot2)
+data <- read.csv("./data/movie_metadata.csv")
+# data <- drop_na(data)
+data <- data %>%
+  # recode empty strings "" by NAs
+  na_if("") %>%
+  # remove NAs
+  na.omit()
+data$movie_title <- gsub("Â", "", as.character(factor(data$movie_title)))
+data <- data %>% 
+  mutate(profit = gross - budget,
+         return_on_investment_perc = (profit/budget)*100)
+str(data)
+```
+
+## Các câu hỏi phân tích và kiểm định
+
+Q1. Có sự khác biệt về điểm số (IMDB score )  giữa các  phim được đánh giá  nội dung là cần có sự giám sát của phụ huynh  và những phim được đánh giá nội dung là không có sự giám sát của phụ huynh?
+
+Q2. Ngôn ngữ có ảnh hưởng tới điểm đánh giá của phim hay không?
+
+Q3. Thể loại phim ảnh hưởng tới tđiểm số của bộ phim trên IMDB?
+
+## Hiểu ván đề
+- Xem lướt qua dữ liệu
+- Trả lời sơ bộ các câu hỏi
+
+## Suy ngẫm về câu hỏi   
+
+- Trả lời một cách chủ quan(theo trực giác) các câu hỏi
+
+- Liên hệ thực tế
+
+## Phân tích dữ liệu
+
+Câu hỏi 1: 
+```{r, echo=FALSE, warning=FALSE}
+movie_metadata <- data
+movie_metadata_sample_id <- sample(unique(movie_metadata$movie_id), 1/10 * dim(movie_metadata))
+movie_metadata_sample <- subset(movie_metadata, movie_metadata$movie_id %in% movie_metadata_sample_id)
+content_rating_type <- movie_metadata_sample[, "content_rating"]
+content_rating_type <- factor(content_rating_type)
+levels(content_rating_type)
+length(content_rating_type)
+movie_metadata_sample_copy <- movie_metadata_sample
+movie_metadata_sample_copy$content_rating <- as.factor(movie_metadata_sample_copy$content_rating)
+levels(movie_metadata_sample_copy$content_rating) <- list("PG" = c("PG", "PG-13"), "Non-PG" = c("Approved", "G", "Not Rated", "R", "Unrated", "X", "GP", "Passed", "NC-17", "M"))
+levels(movie_metadata_sample_copy$content_rating)
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG",])
+```
+## Phân tích dữ liệu
+
+Câu hỏi 1:
+```{r, echo=FALSE, warning=FALSE}
+ggplot(data = movie_metadata_sample_copy, aes(x = content_rating, y = imdb_score)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun.y = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh rating giữa hai đánh giá nội dung")
+```
+## Phân tích dữ liệu
+
+Câu hỏi 1:
+```{r, echo=FALSE, warning=FALSE}
+mean_sample <- tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, mean)
+#mean_sample
+sd_sample <- tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, sd)
+#sd_sample
+movie_metadata_sample_copy$normal.density <- apply(movie_metadata_sample_copy,1, function(x){
+  dnorm(as.numeric(x["imdb_score"]),
+        mean_sample[x["content_rating"]], sd_sample[x["content_rating"]])})
+ggplot(movie_metadata_sample_copy, aes(x = imdb_score)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20,
+                 fill = "grey", col = "black") +
+  facet_grid(content_rating ~ .) +
+  geom_density(col = "red", lwd = 1) +
+  geom_line(aes(y = normal.density), col = "blue", lwd = 1) +
+  ggtitle("Biểu đồ hàm mật độ phân phối xác suất")
+```
+
+## Phân tích dữ liệu
+
+Câu hỏi 1:
+
+```{r, echo=FALSE, warning=FALSE}
+movie_metadata_sample_copy$intercept <- apply(movie_metadata_sample_copy, 1, function(x){mean_sample[x["Category"]]})
+movie_metadata_sample_copy$slope <- apply(movie_metadata_sample_copy, 1, function(x){sd_sample[x["Category"]]})
+ggplot(movie_metadata_sample_copy, aes(sample = imdb_score)) +
+  stat_qq() +
+  facet_grid(content_rating ~ .) +
+  geom_abline(data = movie_metadata_sample_copy, aes(intercept = intercept, slope = slope)) +
+  ggtitle("Biểu đồ QQPlot so sánh phân bố các mẫu với phân phối chuẩn")
+```
+
+## Phân tích dữ liệu
+
+Câu hỏi 1:
+```{r, echo=FALSE, warning=FALSE}
+tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, summary)
+```
+
+## Phân tích dữ liệu:
+
+Câu hỏi 1:
+```{r, echo=FALSE, warning=FALSE}
+m1 <- mean(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+m2 <- mean(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+n1 <- length(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+n2 <- length(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+s1 <- sd(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+s2 <- sd(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+se = sqrt(s1^2/n1 + s2^2/n2)
+t = (m1 - m2)/se
+v = (s2^2/n2 + s1^2/n1)^2/((s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1))
+p_value = 2*pt(q = t, df = v) 
+n1
+m1
+n2
+m2
+t
+p_value
+t.test(movie_metadata_sample_copy$imdb_score ~ movie_metadata_sample_copy$content_rating, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "two.sided", var.equal = FALSE)
+```
+## Phân tích dữ liệu:
+
+Câu hỏi 2:
+```{r, echo=FALSE, warning=FALSE}
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy$language == "English",])
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy$language != "English",])
+tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$language, summary)
+```
+
+## Phân tích dữ liệu:
+
+Câu hỏi 2:
+
+Từ đó ta nhận thấy việc kiểm định cho điểm đánh giá phim theo ngôn ngữ là không thể do tập dữ liệu đã thiên vị ngôn ngữ Anh nhiều hơn.
+
+## Phân tích dữ liệu:
+
+Câu hỏi 3:
+
+```{r, echo=FALSE, warning=FALSE}
+genre = movie_metadata_sample_copy['genres']
+genre = data.frame(table(genre))
+genre = genre[order(genre$Freq,decreasing=TRUE),]
+genre <- head(genre, 5)
+
+# Top 20 genres with the most movies
+ggplot(genre, aes(x=genre, y=Freq)) + 
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh điểm số imdb của 5 thể loại phổ biến nhất")
+```
+
+## Phân tích dữ liệu
+
+Câu hỏi 3:
+
+```{r, echo=FALSE, warning=FALSE}
+q1<-movie_metadata_sample_copy[movie_metadata_sample_copy$genres==c('Comedy','Comedy|Drama','Comedy|Drama|Romance','Drama','Crime|Drama|Thriller'),]
+tapply(q1$imdb_score, q1$genres, summary)
+```
+
+## Phân tích dữ liệu
+
+Câu hỏi 3:
+```{r, echo=FALSE, warning=FALSE}
+fit <- aov(imdb_score ~ genres, data = movie_metadata_sample_copy)
+summary(fit)
+```
+
+## Phân tích dữ liệu:
+
+Bổ sung: Ngoài những câu hỏi đặt trên, tỷ lệ khung hình là một yếu tố cũng cần được để tâm. Một nghiên cứu để so sánh hiệu quả của phim với tỷ lệ khung hình. Chúng ta sẽ tiến hành thực hiện kiểm định giả thuyết tỷ lệ giữa hai mẫu. 
+
+## Phân tích dữ liệu:
+
+So sánh tỷ lệ khung hình theo các thời kỳ:
+```{r, echo=FALSE,warning=FALSE}
+dataYear<-movie_metadata_sample_copy[,"title_year"]
+dataYear1<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] < 2005,]
+#nrow(movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] < 2005,])
+dataYear2<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] >= 2005,]
+#nrow(dataYear2<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] >= 2005,])
+data1<-lapply(dataYear1[,"title_year"],as.numeric)
+data2<-lapply(dataYear2[,"title_year"],as.numeric)
+```
+```{r, echo=FALSE, warning=FALSE}
+datar1<-dataYear1[,"aspect_ratio"]
+datar1<-dataYear1[dataYear1["aspect_ratio"]>= 2.35,]
+#nrow(datar1)
+datar2<-dataYear2[,"aspect_ratio"]
+datar2<-dataYear2[dataYear2["aspect_ratio"]>= 2.35,]
+#nrow(datar2)
+```
+```{r, echo=FALSE, warning=FALSE}
+fracture <-c(85,117)
+total <- c(191,184)
+prop.test(fracture, total)
+```
+
+## Tổng kết
+Dựa trên kết quả phân tích của chúng tôi, có bằng chứng thống kê cho thấy rằng thể loại phim “Drama” có số lượng nhiều nhất.Điều này có thể là do thê loại "Drama" chiếm được sự ưu ái của khán giả nhiều nhất, vậy nên số lượng phim được làm ra phần lớn là thể loại "Drama". Ngoài ra có bằng chứng thống kê cho thấy rằng những bộ phim có nội dung cần có sự giám sát của phụ huynh có lượng điểm IMDB thấp hơn so với nhựng bộ phim nội dung không cần sự giám sát của phu huynh. Và có sự khác biệt đáng kể về số lượng bộ phim có ngôn ngữ tiếng Anh so với các ngôn ngữ khác.Qua những kết quả thống kê trên hứa hẹn cho những nhà làm phim có thể biết thêm về thị hiếu của người xem, nắm bắt được thị trường làm phim trong tương lai.

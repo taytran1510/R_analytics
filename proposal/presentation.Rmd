@@ -1,0 +1,61 @@
+---
+title: "Đề xuất"
+author: 'Trần Tiến Đức - MSSV: 18133007'
+date: "January 6, 2021"
+output:
+  slidy_presentation:
+    footer: "Đề xuất về phim"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Giới thiệu nhóm
+
+Nhóm: 
+1. Trần Tiến Đức	18133007 <br />
+2. Lương Uy Long	18133026 <br />
+3. Lê Đỗ Trà My		18133030 <br />
+4. Trần Như Thuận	18133054 <br />
+
+## Đề xuất (Proposal) 
+Giới thiệu: Giới thiệu tập dữ liệu và câu hỏi nghiên cứu (dữ liệu lấy ở đâu, nó được thu thập thế nào, mỗi đối tượng dữ liệu là gì, có các biến nào, ...). <br />
+	-Tập dữ liệu "IDMS 5000 MOVIES" lấy từ Kaggle datasets. <br />
+
+	Internet Movie Database (IMDb - cơ sở dữ liệu điện ảnh trên Internet) là một trang cơ sở dữ liệu trực tuyến về điện ảnh thế giới. <br />
+Nó cung cấp thông tin về phim, diễn viên, đạo diễn, nhà làm phim... và tất cả những người, công ty trong lĩnh vực sản xuất phim, phim truyền hình và cả trò chơi video. <br />
+
+	Được giới thiệu lần đầu vào năm 1990 bởi lập trình viên máy tính Col Needham, sau đó công ty được thành lập ở Anh như với tên Công ty TNHH Internet Movie Database năm 1996 với doanh thu tạo ra thông qua quảng cáo, cấp phép và hợp tác. Năm 1998 nó trở thành một công ty con của Amazon cho phép mọi người đều có thể sử dụng như là một nguồn tài nguyên quảng cáo để bán đĩa DVD và băng video.
+
+## Mô tả dataset
+
+-Mô tả: Tập dữ liệu gồm thông tin chi tiết của 5043 bộ phim trên 66 quốc gia, gồm 28 thuộc tính lần lượt như sau:
+## Tóm tắt dữ liệu
+```{r cars, echo = TRUE}
+library(tidyverse)
+data_source <- read.csv("D:/University/HCMUTE/Semesters/third semester 1/courses/R for Analytics/project/data/movie_metadata.csv")
+size <- dim(data_source)
+size
+glimpse(data_source)
+```
+
+## Tách mẫu
+-Mẫu lựa chọn: lấy từ tập dữ liệu ngẫu nhiên với cỡ mẫu khoảng 252(1/20 so với tập dữ liệu)	<br/>
+```{r}
+chosen <- sample(unique(data_source$movie_id), 1/20 * size)
+df <- subset(data_source, data_source$movie_id %in% chosen)
+df
+```
+
+## Kế hoạch phân tích dữ liệu
+
+		Mô tả các biến output (response, Y) và input (explanatory, X) bạn dự định để trả lời câu hỏi.
+		
+		Các câu hỏi:
+		1. Liệu những bộ phim với mức kinh phí cao có đặt được nhiều lượt đánh giá cao không?
+		2. lượt bình chọn người dùng liệu có quan hệ với chất lượng phim
+		3. Liệu lượng bình chọn của nhà phê bình (biến num_critic_for_reviews) có quyết định đến lượng bình chọn tổng thể trên mọi phương tiện đại chúng, các trang bình chọn không?
+		
+
+

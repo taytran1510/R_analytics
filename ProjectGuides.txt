@@ -1,0 +1,79 @@
+Đề xuất (Proposal) 
+	SV xem phần "Các bước thực hiện project" bên dưới để hoàn thành đề xuất. Đề xuất cần chứa các thông tin sau:
+	
+	Giới thiệu: Giới thiệu tập dữ liệu và câu hỏi nghiên cứu (dữ liệu lấy ở đâu, nó được thu thập thế nào, mỗi đối tượng dữ liệu là gì, có các biến nào, ...).
+	
+	Dữ liệu: Bỏ file dữ liệu ở thư mục data. Tạo file README giải thích các biến của dữ liệu. In ra cấu trúc của dữ liệu (dùng lệnh glimpse() hoặc skim() của thư viện tidyverse). In ra vài dòng đầu tiên của dữ liệu.
+	
+	Kế hoạch phân tích dữ liệu: 
+		Mô tả các biến output (response, Y) và input (explanatory, X) bạn dự định để trả lời câu hỏi.
+		
+		Các nhóm bạn sử dụng để so sánh
+		
+		Thực hiện EDA (exploratory data analysis) ở mức sơ bộ, gồm các summary statistics và visualizations, cùng với một vài bình luận về việc chúng sẽ giúp bạn hiểu hơn về tập dữ liệu. (bạn sẽ cập nhật thêm nội dung trong báo cáo).
+	
+		Các phương pháp thống kê bạn sử dụng để trả lời câu hỏi. (bạn sẽ cập nhật thêm nội dung trong báo cáo).
+	
+Thuyết trình (Presentation)
+	Mỗi nhóm có 5-10 phút để trình bày. Mỗi thành viên nên có cơ hội trình bày một nội dung gì đó đáng kể trong đề tài. Mỗi nhóm có thể trình bày live (online) hoặc ghi video trước. Tuy nhiên, mỗi nhóm phải có mặt trong buổi thuyết trình để trả lời câu hỏi. Mỗi thành viên tham gia buổi báo cáo phải đặt ít nhất 1 câu hỏi. SV không hỏi sẽ mất điểm phần hỏi đáp. Mỗi báo cáo sẽ có khoảng 2 đến 4 câu hỏi.
+	
+Báo cáo (Report)
+	Báo cáo là một tóm tắt về đề tài. Báo cáo nên bao gồm mô tả về dữ liệu, câu hỏi nghiên cứu, phương pháp sử dụng để trả lời câu hỏi nghiên cứu và kết quả.
+	
+Tổ chức project
+    presentation.Rmd + presentation.html: presentation slides của nhóm
+	report.Rmd + report.html: báo cáo của nhóm
+    README.txt: Các hướng dẫn và mô tả tổng quan về dữ liệu.
+    /data/*: dữ liệu ở dạng csv.
+    /proposal: đề xuất
+
+
+Các bước thực hiện project
+	1. Chọn dataset có tối thiểu 10 biến (cột), tối thiểu 150 đối tượng (dòng), trong đó có ít nhất 3 biến phân loại. Không sử dụng lại các tập dữ liệu đã từng thực hiện trong các bài lab. Các nguồn dữ liệu có thể tham khảo:
+		UCI datasets: https://archive.ics.uci.edu/ml/datasets.php
+		
+		Awesome public datasets: https://github.com/awesomedata/awesome-public-datasets
+		
+		KDD Nuggets: http://www.kdnuggets.com/datasets/
+		
+		Gov datasets: 
+			VN: https://data.gov.vn
+			US: www.data.gov, 
+			EN: www.data.gov.uk, 
+			FR: www.data.gov.fr,
+			http://opengovernmentdata.org/data/catalogues/
+		
+		Kaggle datasets (phải đăng ký tài khoản dùng email mới có thể download): https://www.kaggle.com/datasets
+	
+
+	2. Phân tích tổng quan các biến trong tập dữ liệu (EDA) 
+		Với mỗi biến phân loại, vẽ các biểu đồ bar graph hoặc pie chart. Biểu đồ bao gồm title và phần trăm (percent) cho mỗi loại. Mô tả mode của phân bố
+		
+		Với mỗi biến số, tạo một histogram hoặc dotplot với tần số (frequency) được hiển thị ở trục tung đồng thời tính các summary statistics như: cỡ mẫu (sample size), trung bình (mean), trung vị (median), mode, độ lệch chuẩn (standard deviation), miền giá trị (range), và interquartile range (IQR). Nhận xét về tổng quan về phân bố, khuynh hướng tập trung (center), và độ phân tán (spread), bình luận về các giá trị ngoại biên (outliers) nếu có.
+
+	3. Chọn ra 3 biến phân loại và một biến số để phân tích. 
+		Một biến phân loại được sử dụng để chia dữ liệu thành 2 mẫu để thực hiện các so sánh. Báo cáo sẽ bao gồm phần giới thiệu, các so sánh các và kết luận.
+		
+		Sinh viên có thể sử dụng bất kỳ biến phân loại nào để xác định hai mẫu, nhưng các mẫu phải có kích thước gần nhau. Ví dụ so sánh giữa nam và nữ mặc dù có nhiều phương án khác mà sinh có thể chọn sử dụng. Hai mẫu được xác định trong giai đoạn này sẽ được sử dụng lại trong giai đoạn tiếp theo của đề tài.
+		
+		Trong phần giới thiệu, sinh viên xác định hai mẫu của mình, tạo biểu đồ thanh (bar chart) với tiêu đề đại diện cho hai mẫu với kích thước mẫu được xác định trên biểu đồ và giới thiệu ngắn gọn về ba phép so sánh sẽ được đưa vào báo cáo.
+		
+		Đối với phép so sánh đầu tiên, sinh viên so sánh một trong các biến số giữa hai mẫu của chúng. Sinh viên cần tạo các boxplot xếp chồng lên nhau theo chiều ngang với tiêu đề xác định các ngoại lệ, tính toán năm giá trị tóm tắt (5-numbers summary statistics) cho mỗi mẫu, sau đó viết một đoạn văn ngắn so sánh kết quả giữa hai mẫu.
+		
+		Đối với phép so sánh thứ hai, sinh viên so sánh một trong các biến phân loại giữa hai mẫu đã xác định. Sinh tạo một biểu đồ thanh với tiêu đề có hai mẫu trên trục x và các cột đại diện cho biến số. Phần trăm trong mỗi mẫu được xác định ở đầu mỗi thanh. Sau đó là một bình luận ngắn về phần trăm trong mỗi mẫu.
+		
+		Đối với phép so sánh thứ ba, sinh viên so sánh một biến phân loại khác giữa hai mẫu đã xác định. Sinh viên lập một contingency table với các dòng đại diện cho hai mẫu và các cột đại diện cho biến. Sinh viên xác định một trong các output cho biến phân loại là success, sau đó tính xác suất success cho toàn bộ tập dữ liệu và xác suất success có điều kiện cho hai mẫu nhỏ hơn. Sinh viên viết một đoạn ngắn để so sánh các xác suất đã tính được và xác định xem có tồn tại mối quan hệ giữa hai mẫu đối với biến đang xét hay không.
+		
+		Phần cuối cùng của giai đoạn này của báo cáo là một kết luận tóm tắt kết quả của các so sánh.
+
+	4. Đối với giai đoạn này, sinh viên thực hiện hai kiểm định giả thuyết và xây dựng hai khoảng tin cậy tương ứng. Một trong hai biến phân loại được thảo luận trong giai đoạn kế trước của báo cáo là trọng tâm của giai đoạn này của đề tài. Phần này bao gồm phần mở đầu, kiểm định giả thuyết một tỷ lệ, khoảng tin cậy một tỷ lệ, kiểm định giả thuyết hai tỷ lệ, khoảng tin cậy hai tỷ lệ và sau đó là kết luận. Đầu tiên, một kiểm định được thực hiện cho toàn bộ quần thể (tập dữ liệu) và một khoảng tin cậy tương ứng được tạo. Kiểm định giả thuyết hai tỷ lệ và khoảng tin cậy hai tỷ lệ tương ứng sử dụng hai mẫu được xác định trong giai đoạn kế trước của đề tài và cùng một biến phân loại được sử dụng trong kiểm định giả thuyết và khoảng tin cậy một tỷ lệ.
+		Trong phần giới thiệu, sinh viên được yêu cầu xác định lại hai mẫu từ giai đoạn kế trước của đề tài, bao gồm biểu đồ thanh với tiêu đề và cỡ mẫu phía trên thanh cho hai mẫu, sau đó giới thiệu các kiểm định giả thuyết và khoảng tin cậy mà họ dự định thực hiện và tạo trong giai đoạn này của đề tài.
+		
+		Đối với kiểm định giả thuyết một tỷ lệ, quần thể quan tâm là tất cả dữ liệu chưa được thu thập và mẫu là tập dữ liệu đang dùng. Sinh viên được yêu cầu giới thiệu ngắn gọn giải thích kiểm định mà các em định chạy, biểu đồ bánh (pie chart) thể hiện biến số quan tâm bao gồm tiêu đề và phần trăm trong mỗi loại, các bước của phép kiểm định giả thuyết (đặt giả thuyết, chuẩn bị, tính toán và diễn giải), và kết luận cuối cùng liên quan đến yêu cầu ban đầu.
+		
+		Khoảng tin cậy một tỷ lệ tương ứng cho tỷ lệ quần thể đã được tính trong kết quả của kiểm định giả thuyết đầu. Sinh viên cần giải thích những gì họ dự định để ước tính xác định mức độ tin cậy thích hợp, và ba bước tạo khoảng tin cậy (chuẩn bị, tính toán và diễn giải). Việc giải thích cần bao gồm mức độ tin cậy và tuyên bố về tham số quần thể được ước tính.
+		
+		Kiểm định giả thuyết hai tỷ lệ là kiểm định sự khác biệt giữa hai tỷ lệ quần thể. Hai quần thể dựa trên các mẫu được xác định trong giai đoạn kế trước. Ví dụ: nếu các mẫu được xác định trong giai kế trước là nam và nữ, thì hai quần thể tương ứng với nam và nữ. Đối với kiểm định giả thuyết hai tỷ lệ, sinh viên phải có phần giới thiệu ngắn gọn giải thích kiểm định giả thuyết, một contingency table với các mẫu được xác định trên các dòng và biến từ kiểm định giả thuyết đầu tiên là các cột, bốn bước của kiểm định giả thuyết (giả thuyết, chuẩn bị, tính toán và diễn giải), và kết luận cuối cùng về khẳng định ban đầu.
+		
+		Khoảng tin cậy hai tỷ lệ tương ứng đã được tính trong kết quả của kiểm định giả thuyết thứ hai. Đối với phần này của báo cáo, sinh viên phải giải thích những gì họ dự định ước tính, xác định mức độ tin cậy thích hợp và ba bước tạo khoảng tin cậy (chuẩn bị, tính toán và diễn giải). Việc giải thích cần bao gồm mức độ tin cậy và tuyên bố về sự khác biệt được ước tính. Hơn nữa, giải thích về tầm quan trọng của số giá trị 0 thuộc khoảng tin cậy, nếu có. Báo cáo cho phần này cần bao gồm biểu đồ, contingency table, kết quả kiểm định giả thuyết và kết quả cho khoảng tin cậy.
+

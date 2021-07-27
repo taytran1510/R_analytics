@@ -1,0 +1,367 @@
+---
+title: "Báo cáo phân tích thống kê về đề tài phim"
+author: "Trần Tiến Đức , Trần Như Thuận, Lương Uy Long và Lê Đỗ Trà My"
+date: "07/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+## Giới thiệu
+Internet Movie Database (IMDb - cơ sở dữ liệu điện ảnh trên Internet) là một trang cơ sở dữ liệu trực tuyến về điện ảnh thế giới. Nó cung cấp thông tin về phim, diễn viên, đạo diễn, nhà làm phim... và tất cả những người, công ty trong lĩnh vực sản xuất phim, phim truyền hình và cả trò chơi video. Cơ sở dữ liệu kkhổng lồ này cho phép chúng ta có một cái nhìn tổng quan về lịch sử của từng bộ phim và các yếu tố tác động quan trọng tới những bộ phim điện ảnh  của thế giới.
+
+## Dữ liệu
+Tập dữ liệu này được lấy từ Kaggle. Trong báo cáo này , chúng ta chỉ quan tâm một số biến có tác động  tới sự thành công của một bộ phim điện ảnh.
+```{r, eval=TRUE}
+data <- read.csv("../data/movie_metadata.csv")
+# data <- drop_na(data)
+data <- data %>%
+  # recode empty strings "" by NAs
+  na_if("") %>%
+  # remove NAs
+  na.omit()
+data$movie_title <- gsub("Â", "", as.character(factor(data$movie_title)))
+data <- data %>% 
+  mutate(profit = gross - budget,
+         return_on_investment_perc = (profit/budget)*100)
+str(data)
+#head(data, 10)
+```
+
+## Các biến
+Mô tả tên các biến và ý nghĩa.
+
+- genres: Thể loại phim
+- actor_1_name: Tên diễn viên thứ nhất
+- movie_title: Tên phim
+- num_voted_users: Số người dùng (trên IMDB) tham gia đánh giá phim
+- cast_total_facebook_likes: 
+- actor_3_name: Tên diễn viên thứ 3
+- facenumber_in_poster: Số khuôn mặt có trong poster
+- plot_keywords: Các từ khóa về nội dung
+- movie_imdb_link: Đường dẫn link phim trên IMDB
+- num_user_for_reviews: Số người dùng review phim
+- language: ngôn ngữ được sử dụng chính trong phim
+- country: Quốc gia sản xuất
+- content_rating: Xếp hạng nội dung (Ví dụ: PG-13: Từ 13 tuổi trở lên và cần có sự giám sát của phụ huynh)
+- budget: Chi phí sản xuất
+- title_year: Năm công chiếu
+- actor_2_facebook_likes: Số lượt likes trên facebook về diễn viên thứ 2
+- imdb_score: Điểm số trên IMDB
+- aspect_ratio: Tỷ lệ khung hình được sử dụng cho phim
+- movie_facebook_likes: Số lượt like trên facebook về bộ phim
+- profit: Lợi nhuận của bộ phim (Doanh thu - kinh phí sản xuất)
+- return_on_investment_perc: Phần trăm lợi nhuận trên kinh phí sản xuất ((Lợi nhuận/Kinh phí) * 100)
+
+## Câu hỏi
+<!-- Mô tả các câu hỏi mà nhóm sẽ dùng tập dữ liệu để trả lời. -->
+
+Q1. Có sự khác biệt về điểm số (IMDB score )  giữa các  phim được đánh giá  nội dung là cần có sự giám sát của phụ huynh  và những phim được đánh giá nội dung là không có sự giám sát của phụ huynh?
+
+Q2. Ngôn ngữ có ảnh hưởng tới điểm đánh giá của phim hay không?
+
+Q3. Thể loại phim ảnh hưởng tới tđiểm số của bộ phim trên IMDB?
+
+
+## Hiểu vấn đề
+
+### Xem lướt qua dữ liệu
+- Chúng ta sẽ bắt đầu bằng cách trả lời một số câu hỏi về dữ liệu. Trả lời một số câu hỏi đơn giản trên dữ liệu để hiểu hơn về dữ liệu.
+
+  - Trong 10 thể loại phim đầu tiên, số lượng các thể loại trong tập dữ liệu đó ?
+```{r}
+genre = data$genres
+genre = data.frame(table(genre))
+genre = genre[order(genre$Freq,decreasing=TRUE),]
+head(genre,10)
+```
+  - Trong 10 bộ phim đầu tiên trong danh sách, có bao nhiêu bộ phim không được sản xuất bởi nước Mỹ?
+```{r}
+df <- head(data, 10)
+temp <- df[df$country != "USA",]
+length(temp)
+# temp
+```
+  - Trong 10 bộ phim đầu tiên trong danh sách, có bao nhiêu phim được sản xuất vào năm 2012?
+```{r}
+temp <- df[df$title_year == 2012,]
+length(temp)
+```
+  - Trong toàn bộ các phim trong dataset, có bao nhiêu loại đánh giá nội dung?
+```{r}
+tmp <- factor(data$content_rating)
+levels(tmp)
+```
+  
+
+### Thiết kế nghiên cứu 
+<!-- Bước tiếp mô tả cách lấy mẫu và thiết kế nghiên cứu, những vấn đề này có ý nghĩa về tính tổng quát hóa của kết quả và loại kết luận bạn có thể rút ra từ chúng. -->
+
+#### Xác định loại nghiên cứu
+
+- Xét về mặt đặc tính của nghiên cứu thì nghiên cứu này là nghiên cứu quan sát (observational study) vì chúng ta chỉ quan sát và ghi nhận thực trạng đặc điểm/đặc tính và sự kiện diễn ra trong nghiên cứu mà không có tác động đến đối tượng nghiên cứu.
+
+#### Xác định cách lấy mẫu
+  
+  - Phương pháp lấy mẫu trong báo cáo này là lấy mẫu ngẫu nhiên đơn giản
+
+## Suy ngẫm về câu hỏi
+- Trong bước đầu tiên này, chúng ta nghĩ về câu hỏi và sử dụng trực giác và/hoặc kinh nghiệm của mình để thử và dự đoán kết quả sẽ hiển thị. Sau đó, chúng ta sẽ so sánh những gì chúng ta nghĩ ban đầu với những gì chúng ta thực sự tìm thấy khi chúng ta phân tích dữ liệu.
+
+
+- Trước khi phân tích dữ liệu và khám phá các câu hỏi, hãy cố gắng dự đoán những gì dữ liệu sẽ thể hiện (sử dụng kinh nghiệm và trực giác của riêng bạn).
+
+
+## Phân tích dữ liệu
+- Trong bước này, chúng ta chọn và tiến hành các phân tích cần thiết để giải quyết câu hỏi hiện tại.
+
+
+```{r}
+movie_metadata <- data
+str(movie_metadata)
+```
+```{r}
+movie_metadata <- movie_metadata[complete.cases(movie_metadata),]
+# movie_metadata
+
+```
+
+##Câu hỏi 1: Có sự khác biệt về điểm số (IMDB score )  giữa các  phim được đánh giá  nội dung là cần có sự giám sát của phụ huynh  và những phim được đánh giá nội dung là không có sự giám sát của phụ huynh?
+
+### 1. Xác định các biến có liên quan
+- (Các) biến nào trong số những biến trong tập dữ liệu có liên quan đặc biệt đến câu hỏi hiện tại? (Các) biến này thuộc loại nào (quantitative hay categorical)?
+  Trả lời:
+  -   Biến content_rating: biến định tính
+  -   Biến imdb_score: biến định lượng
+
+### 2. Phân tích thăm dò (Exploratory Analysis)
+- Bây giờ chúng ta đã xác định và phân loại (các) biến có liên quan, chúng ta sử dụng phương pháp phân tích dữ liệu thăm dò để giúp chúng ta tóm tắt các đặc điểm quan trọng của dữ liệu.
+```{r}
+movie_metadata_sample_id <- sample(unique(movie_metadata$movie_id), 1/10 * dim(movie_metadata))
+movie_metadata_sample <- subset(movie_metadata, movie_metadata$movie_id %in% movie_metadata_sample_id)
+dim(movie_metadata_sample)
+```
+```{r}
+content_rating_type <- movie_metadata_sample[, "content_rating"]
+content_rating_type <- factor(content_rating_type)
+levels(content_rating_type)
+length(content_rating_type)
+movie_metadata_sample_copy <- movie_metadata_sample
+movie_metadata_sample_copy$content_rating <- as.factor(movie_metadata_sample_copy$content_rating)
+levels(movie_metadata_sample_copy$content_rating) <- list("PG" = c("PG", "PG-13"), "Non-PG" = c("Approved", "G", "Not Rated", "R", "Unrated", "X", "GP", "Passed", "NC-17", "M"))
+levels(movie_metadata_sample_copy$content_rating)
+```
+```{r}
+length(content_rating_type[content_rating_type == "PG" | content_rating_type == "PG-13"])
+```
+Từ phân tích trên ta có mẫu 375 phim điện ảnh và 188 phim trong số đó được đánh giá nội dung là cần có sự giám sát của phụ huynh
+
+#### 4. Xác định các biểu đồ và tóm tắt số phù hợp
+- Với dạng câu hỏi này, chúng ta sẽ dùng biểu đồ side-by-side boxplot 
+```{r}
+ggplot(data = movie_metadata_sample_copy, aes(x = content_rating, y = imdb_score)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun.y = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh rating giữa hai đánh giá nội dung")
+```
+
+```{r}
+mean_sample <- tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, mean)
+#mean_sample
+sd_sample <- tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, sd)
+#sd_sample
+movie_metadata_sample_copy$normal.density <- apply(movie_metadata_sample_copy,1, function(x){
+  dnorm(as.numeric(x["imdb_score"]),
+        mean_sample[x["content_rating"]], sd_sample[x["content_rating"]])})
+ggplot(movie_metadata_sample_copy, aes(x = imdb_score)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20,
+                 fill = "grey", col = "black") +
+  facet_grid(content_rating ~ .) +
+  geom_density(col = "red", lwd = 1) +
+  geom_line(aes(y = normal.density), col = "blue", lwd = 1) +
+  ggtitle("Biểu đồ hàm mật độ phân phối xác suất")
+```
+```{r}
+movie_metadata_sample_copy$intercept <- apply(movie_metadata_sample_copy, 1, function(x){mean_sample[x["Category"]]})
+movie_metadata_sample_copy$slope <- apply(movie_metadata_sample_copy, 1, function(x){sd_sample[x["Category"]]})
+ggplot(movie_metadata_sample_copy, aes(sample = imdb_score)) +
+  stat_qq() +
+  facet_grid(content_rating ~ .) +
+  geom_abline(data = movie_metadata_sample_copy, aes(intercept = intercept, slope = slope)) +
+  ggtitle("Biểu đồ QQPlot so sánh phân bố các mẫu với phân phối chuẩn")
+```
+Tóm tắt dữ liệu Five number summary
+```{r}
+tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$content_rating, summary)
+```
+Trên biểu đồ QQplot ta thấy sự liên quan giữa các giá trị mong đợi(truc hoành) và các giá trị quan sát được(trục tung) của các mẫu đều có vẻ như nằm trên đường thẳng chéo, vì ta coi mẫu này gần với phân phối chuẩn. Như vậy chúng ta có thể áp dụng định lý giới hạn trung tâm  cho việc kiểm định giả thuyết được đặt ra trong câu hỏi trên.
+
+#### 5. Thống kê suy diễn
+
+- Thống kê suy diễn này thuộc loại so sánh hai population mean.
+
+- Phương pháp kiểm định phù hợp cho câu hỏi này là Awo sample t-test for two means.
+
+- Xác định giả thuyết và đối thuyết:
+  
+  - Null hypothesis (Giả thuyết không - $H_0$): Không có sự khác biệt về  điểm số của phim theo các đánh giá nội dung khác nhau
+  - Alternative hypothesis (Đối thuyết - $H_A$): Tồn tại sự khác biệt về điểm  số của các phim thepo các  đánh giá nội dung khác nhau
+
+#### 5.1. Tính t-statistics
+```{r}
+m1 <- mean(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+m2 <- mean(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+n1 <- length(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+n2 <- length(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+s1 <- sd(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "PG", "imdb_score"])
+s2 <- sd(movie_metadata_sample_copy[movie_metadata_sample_copy$content_rating == "Non-PG", "imdb_score"])
+se = sqrt(s1^2/n1 + s2^2/n2)
+t = (m1 - m2)/se
+t
+```
+#### 5.2. Tính p-value
+```{r}
+v = (s2^2/n2 + s1^2/n1)^2/((s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1))
+p_value = 2*pt(q = t, df = v) 
+p_value
+```
+#### 5.3. Kiểm tra bằng t.test trong R
+```{r}
+t.test(movie_metadata_sample_copy$imdb_score ~ movie_metadata_sample_copy$content_rating, mu = 0, conf.level = 0.95,
+       paired = FALSE, alternative = "two.sided", var.equal = FALSE)
+```
+Ta có $p-value$ = 0.006254 < $\alpha$ = 0.05. Vậy ta bác bỏ giả thuyết $H_0$
+
+#### 5.4. Kết luận
+
+- Phân tích thăm dò cho thấy sự khác biệt về điểm đánh giá phim trên IMDB giữa các  đánh giá nội dung dành cho người xem.
+  
+  - Kiểm định thống kê cho thấy p-value rất nhỏ là một bằng chứng  đủ mạnh để bác bỏ giả thuyết $H_0$ và chứng minh rằng luôn có sự khác biệt về điểm số đánh giá của các bộ phim  dựa theo đánh giá nội dung v.
+  
+- Dữ liệu có cung cấp không cung cấp bằng chứng rằng sản xuất phim có nội dung  tập trung vào tất cả các loại đối tượng xem phim. Lý do để giải thích cho việc này nằm ở  thị hiếu mang tính chủ quan của người xem cũng như người xem  muốn xem những bộ phim dễ chấp nhận với nhiều lứa tuổi hơn là chỉ dành cho những đối tượng nhát định.
+
+- Điều này trùng khớp với những gì diễn ra trong thực tế. 
+
+### Câu hỏi 2: Ngôn ngữ có ảnh hưởng tới điểm đánh giá của phim hay không?
+
+#### 1. Xem lướt qua dữ liệu
+```{r}
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy$language == "English",])
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy$language != "English",])
+tapply(movie_metadata_sample_copy$imdb_score, movie_metadata_sample_copy$language, summary)
+```
+Ta thấy kích thước hai mẫu con không tương tự nhau nên ta kết luận dataset này đã bị thiên vị về ngôn ngữ tiếng Anh nhiều hơn.
+
+### Câu hỏi 3: Thể loại phim ảnh hưởng tới điểm số của bộ phim trên IMDB?
+
+#### 1. Xem lướt dữ liệu
+```{r}
+genre = movie_metadata_sample_copy['genres']
+genre = data.frame(table(genre))
+genre = genre[order(genre$Freq,decreasing=TRUE),]
+genre <- head(genre, 5)
+
+# Top 20 genres with the most movies
+ggplot(genre, aes(x=genre, y=Freq)) + 
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar") +
+  stat_summary(fun = mean, col = "black", geom = "point", size = 3) +
+  ggtitle("Biểu đồ Boxplots so sánh điểm số imdb của 5 thể loại phổ biến nhất")
+```
+  Ta kết luận là thể loại Comedy|Drama|Romace chiếm số lượng nhiều nhất
+##### Phân tích thể phim nào có điểm imdb cao nhất
+ ta tiến hành thăm dò một vài thể loại điển hình trong tập dữ liệu:
+```{r}
+q1<-movie_metadata_sample_copy[movie_metadata_sample_copy$genres==c('Comedy','Comedy|Drama','Comedy|Drama|Romance','Drama','Crime|Drama|Thriller'),]
+```
+ xác định biến liên quan:
+ - biến giải thích: genrers
+ - biến phản hồi: imdb_score
+ Phân tích thăm dò:
+```{r}
+tapply(q1$imdb_score, q1$genres, summary)
+```
+ giờ ta tiến hành kiểm định trên toàn sample
+#### 2. Suy diễn
+
+- Suy diễn thống kê cho thống kê hiện tại thuộc loại so sánh nhiều hơn 2 population mean.
+
+- Kiểm định thống kê phù hợp cho câu hỏi này là ANOVA F-test
+
+Xác định các giả thuyết
+
+ - Null hypothesis: $H_0$: Không có sự khác biệt về thể loại phim và điểm đánh giá imdb
+
+ - Alternative hypothesis: $H_A$:Có sự khác biệt về thể loại phim và điểm đánh giá imdb
+
+```{r}
+fit <- aov(imdb_score ~ genres, data = movie_metadata_sample_copy)
+summary(fit)
+```
+```{r, eval=FALSE}
+TukeyHSD(fit, conf.level = 0.95)
+```
+Dựa vào kết quả trên, ANOVA F-test chỉ ra rằng có bằng chứng thống kê đáng kể để kết luận rằng điểm đánh giá imdb ở các thể loại phim là không bằng nhau
+ - p-value = 2.09e-05 
+ - Vì p-value nhỏ hơn mức ý nghĩa α=0.05 nên ta bác bỏ $H_0$.
+Dựa vào bảng HSD ta có thể thấy được các cặp mẫu có p-value nhỏ hơn 0.05 là có sự khác biệt về  điểm đánh giá imdb theo mặt thống kê .
+
+## Ngoài những câu hỏi đặt trên, tỷ lệ khung hình là một yếu tố cũng cần được để tâm. Một nghiên cứu để so sánh hiệu quả của phim với tỷ lệ khung hình. Chúng ta sẽ tiến hành thực hiện kiểm định giả thuyết tỷ lệ giữa hai mẫu. 
+các mẫu ngẫu nhiên bao gồm n1 = 191 bộ phim  trước năm 2005 và n2 = 184 bộ phim sau năm 2005. Ở nhóm phim thứ nhất có 85 bộ phim có chuẩn mà hình lớn 2.35 trở lên. Ở nhóm còn lại có 117 bộ phim như vậy. Vấn đề đặt ra là tỷ lệ bộ phim có tỷ lệ khung hình chuẩn lớn 2.35 ở hai nhóm phim này có thật sự khác nhau không?
+```{r}
+dataYear<-movie_metadata_sample_copy[,"title_year"]
+dataYear1<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] < 2005,]
+nrow(movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] < 2005,])
+dataYear2<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] >= 2005,]
+nrow(dataYear2<-movie_metadata_sample_copy[movie_metadata_sample_copy["title_year"] >= 2005,])
+data1<-lapply(dataYear1[,"title_year"],as.numeric)
+data2<-lapply(dataYear2[,"title_year"],as.numeric)
+```
+```{r}
+datar1<-dataYear1[,"aspect_ratio"]
+datar1<-dataYear1[dataYear1["aspect_ratio"]>= 2.35,]
+nrow(datar1)
+datar2<-dataYear2[,"aspect_ratio"]
+datar2<-dataYear2[dataYear2["aspect_ratio"]>= 2.35,]
+nrow(datar2)
+```
+```{r}
+fracture <-c(85,117)
+total <- c(191,184)
+prop.test(fracture, total)
+```
+Kết quả cho thấy tỷ lệ bộ phim có tỷ lệ khung hình có chuẩn lớn hơn 2.35 ở nhóm 1 là 0.44 và nhóm 2 là 0.63. Với kết quả trên ta còn biết được, với xác xuất 95% độ khác biệt giữa 2 nhóm phim này nằm trong khoảng 0.086 đến 0.295 (tức 8.6% đến 29.5%). với chỉ số p-value=0.0003152 << 0.05, ta có thể kết luận rằng: Tỷ lệ bộ phim có tỷ lệ khung hình có chuẩn lớn 2.35 trở lên ở nhóm phim trước 2005 thật sự thấp hơn ở nhóm những bộ phim sau 2005.
+
+## 3. Kết luận
+
+  - Phân tích thăm dò cho thấy sự khác biệt về điểm đánh giá phim trên IMDB giữa các  đánh giá nội dung dành cho người xem  và giữa các thể loại phim trong suốt lịch sử làm phim.
+  
+  - Kiểm định thống kê cho thấy p-value rất nhỏ là một bằng chứng  đủ mạnh để bác bỏ giả thuyết $H_0$ và chứng minh rằng luôn có sự khác biệt về các thể loại phim.
+
+
+- Dữ liệu có cung cấp không cung cấp bằng chứng rằng sản xuất phim tập  trung vào thể loại hài hước, lãng mạn và kịch sẽ khiến phim được đánh giá cao hơn. Lý do để giải thích cho việc này nằm ở thị hiếu của người xem cũng như các lượt bình luận đánh giá mang tính chủ quan của người xem, nhất là với những người hay xem phim vào cuối tuần  vì họ có xu hướng xem vì giải trí hơn là suy ngẫm về bộ phim đó.
+
+- Điều này trùng khớp với những gì diễn ra trong thực tế. Tuy nhiên trên thế  giới , người xem bắt đầu có xu hướng xem những bộ phim mang nội dung tả thực hơn và gần với đời sống hơn.
+
+
+## Tổng kết
+Dựa trên kết quả phân tích của chúng tôi, có bằng chứng thống kê cho thấy rằng thể loại phim “Drama” có số lượng nhiều nhất.Điều này có thể là do thê loại "Drama" chiếm được sự ưu ái của khán giả nhiều nhất, vậy nên số lượng phim được làm ra phần lớn là thể loại "Drama". Ngoài ra có bằng chứng thống kê cho thấy rằng những bộ phim có nội dung cần có sự giám sát của phụ huynh có lượng điểm IMDB thấp hơn so với nhựng bộ phim nội dung không cần sự giám sát của phu huynh. Và có sự khác biệt đáng kể về số lượng bộ phim có ngôn ngữ tiếng Anh so với các ngôn ngữ khác.Qua những kết quả thống kê trên hứa hẹn cho những nhà làm phim có thể biết thêm về thị hiếu của người xem, nắm bắt được thị trường làm phim trong tương lai.
+
+- Nhược điểm:
+
+ Nghiên cứu trên là một nghiên cứu quan sát, vì vậy không thể đưa ra kết luận nhân quả.
+ Có thể đưa ra kết luận cho “quần thể” vì mẫu được thu thập một cách ngẫu nhiên, tuy nhiên những kết quả này có thể không còn đúng đến hiện tại bởi vì thời điểm thu thập dữ liệu cách đây khá lâu, thị trường phim sẽ có nhiều biến động nên có thể sẽ tuỳ theo xu hướng hiện tại.
+ 
+ Hiểu biết có hạn và thời gian không cho phép tìm hiểu kỹ nên không tránh được sai sót trong 
+ bài.
+ 
+ Việc thu thập dữ liệu của toàn bộ phim từ năm 1920-2016 là điều không thể, nên vì thế tính ngẫu nhiên của mẫu không thể đảm bảo, khó để đưa ra kết luận cho toàn bộ phim được làm từ thời gian 1920-2016 và hướng cho. hiện nay
